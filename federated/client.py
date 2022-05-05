@@ -36,17 +36,26 @@ def get_dataset(dataset_path):
 
 
 class FederatedClient(fl.client.NumPyClient):
-    def __init__(self, model, train_ds, test_ds) -> None:
+    def __init__(self, model, train_ds, test_ds, log_dir='./logs/') -> None:
         self.model = model
         self.train_ds = train_ds
         self.test_ds = test_ds
+        self.log_dir = log_dir
 
     def get_parameters(self):
         return self.model.get_weights()
 
     def fit(self, parameters, config):
         self.model.set_weights(parameters)
-        self.model.fit(self.train_ds, validation_data=self.test_ds, epochs=1)
+
+        tensorboard_callback = tf.keras.callbacks.TensorBoard(
+            log_dir=self.log_dir)
+        self.model.fit(
+            self.train_ds, 
+            validation_data=self.test_ds, 
+            epochs=1, 
+            callbacks=[tensorboard_callback])
+        
         return self.model.get_weights(), len(self.train_ds), {}
 
     def evaluate(self, parameters, config):
@@ -55,10 +64,10 @@ class FederatedClient(fl.client.NumPyClient):
         return loss, len(self.test_ds), {"accuracy": acc}
 
 
-def start_client(dataset, model):
+def start_client(dataset, model, log_dir=None):
     train, test = dataset
 
-    client = FederatedClient(model, train, test)
+    client = FederatedClient(model, train, test, log_dir)
 
     fl.client.start_numpy_client("0.0.0.0:5700", client=client)
 
@@ -68,6 +77,9 @@ if __name__ == '__main__':
         client_n = int(sys.argv[1])
         dataset = get_dataset('/content/Dataset/client' + str(client_n))
         model = get_compiled_model()
-        start_client(dataset, model)
+        start_client(
+            dataset, 
+            model, 
+            log_dir='/content/drive/MyDrive/MajorProject/logs/federated/client' + str(client_n))
     else:
         sys.stderr.write('No argumets provided.\n')
