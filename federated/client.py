@@ -50,11 +50,15 @@ class FederatedClient(fl.client.NumPyClient):
 
         tensorboard_callback = tf.keras.callbacks.TensorBoard(
             log_dir=self.log_dir)
+        csv_logger = tf.keras.callbacks.CSVLogger(
+            self.log_dir + 'training.log', 
+            append=True)
+
         self.model.fit(
             self.train_ds, 
             validation_data=self.test_ds, 
-            epochs=1, 
-            callbacks=[tensorboard_callback])
+            epochs=2, 
+            callbacks=[tensorboard_callback, csv_logger])
         
         return self.model.get_weights(), len(self.train_ds), {}
 
