@@ -57,7 +57,7 @@ class FederatedClient(fl.client.NumPyClient):
         self.model.fit(
             self.train_ds, 
             validation_data=self.test_ds, 
-            epochs=2, 
+            epochs=config.get('epochs', 1), 
             callbacks=[tensorboard_callback, csv_logger])
         
         return self.model.get_weights(), len(self.train_ds), {}
@@ -65,6 +65,11 @@ class FederatedClient(fl.client.NumPyClient):
     def evaluate(self, parameters, config):
         self.model.set_weights(parameters)
         loss, acc = self.model.evaluate(self.test_ds)
+
+        # Log client's local evaluation loss and accuracy
+        with open(self.log_dir + 'evaluation.log', 'a') as f:
+            f.write(f'{config.get("round")},{loss},{acc}\n')
+        
         return loss, len(self.test_ds), {"accuracy": acc}
 
 
