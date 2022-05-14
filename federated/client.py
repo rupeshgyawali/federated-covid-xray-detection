@@ -32,6 +32,11 @@ def get_dataset(dataset_path):
     test_ds = tf.keras.utils.image_dataset_from_directory(
         dataset_path, seed=123, validation_split=0.2, subset="validation")
 
+    # Configure dataset for performance
+    # AUTOTUNE = tf.data.AUTOTUNE
+    # train_ds = train_ds.cache().shuffle(4500).prefetch(buffer_size=AUTOTUNE)
+    # test_ds = test_ds.cache().prefetch(buffer_size=AUTOTUNE)
+
     return train_ds, test_ds
 
 
@@ -48,8 +53,6 @@ class FederatedClient(fl.client.NumPyClient):
     def fit(self, parameters, config):
         self.model.set_weights(parameters)
 
-        tensorboard_callback = tf.keras.callbacks.TensorBoard(
-            log_dir=self.log_dir)
         csv_logger = tf.keras.callbacks.CSVLogger(
             self.log_dir + 'training.log', 
             append=True)
@@ -58,7 +61,7 @@ class FederatedClient(fl.client.NumPyClient):
             self.train_ds, 
             validation_data=self.test_ds, 
             epochs=config.get('epochs', 1), 
-            callbacks=[tensorboard_callback, csv_logger])
+            callbacks=[csv_logger])
         
         return self.model.get_weights(), len(self.train_ds), {}
 
@@ -89,6 +92,6 @@ if __name__ == '__main__':
         start_client(
             dataset, 
             model, 
-            log_dir='/content/drive/MyDrive/MajorProject/logs/federated/client' + str(client_n))
+            log_dir='/content/drive/MyDrive/MajorProject/logs/experiment1/federated/client' + str(client_n))
     else:
         sys.stderr.write('No argumets provided.\n')

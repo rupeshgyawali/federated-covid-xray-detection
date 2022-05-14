@@ -7,7 +7,7 @@ class FederatedStrategy(FedAvg):
         loss_aggregated, metrics_aggregated = aggregated_result
 
         # Log evaluation loss and accuracy
-        with open('/content/drive/MyDrive/MajorProject/logs/federated/server_evaluation.log', 'a') as f:
+        with open('/content/drive/MyDrive/MajorProject/logs/experiment1/federated/server_evaluation.log', 'a') as f:
             f.write(f'{rnd},{loss_aggregated},{metrics_aggregated["accuracy"]}\n')
         
         return aggregated_result
@@ -25,7 +25,7 @@ def on_fit_config_fn(rnd):
     return {
         "learning_rate": 0.001,
         "round": rnd,
-        "epochs": 2,
+        "epochs": 3,
     }
 
 def on_evaluate_config_fn(rnd):
@@ -51,5 +51,5 @@ def start_server(n_rounds, n_clients, fraction_fit):
     return history
 
 if __name__ == '__main__':
-    history = start_server(n_rounds=3, n_clients=3, fraction_fit=0.5)
+    history = start_server(n_rounds=10, n_clients=3, fraction_fit=0.5)
     print(history)
