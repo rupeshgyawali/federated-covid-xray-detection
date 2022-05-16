@@ -1,5 +1,8 @@
 import flwr as fl
+import numpy as np
 from flwr.server.strategy import FedAvg
+
+LOG_DIR = '/content/drive/MyDrive/MajorProject/logs/experiment2/federated/'
 
 class FederatedStrategy(FedAvg):
     def aggregate_evaluate(self, rnd, results, failures):
@@ -7,10 +10,18 @@ class FederatedStrategy(FedAvg):
         loss_aggregated, metrics_aggregated = aggregated_result
 
         # Log evaluation loss and accuracy
-        with open('/content/drive/MyDrive/MajorProject/logs/experiment1/federated/server_evaluation.log', 'a') as f:
+        with open(LOG_DIR + 'server_evaluation.log', 'a') as f:
             f.write(f'{rnd},{loss_aggregated},{metrics_aggregated["accuracy"]}\n')
         
         return aggregated_result
+
+    def aggregate_fit(self, rnd, results, failures):
+        aggregated_weights = super().aggregate_fit(rnd, results, failures)
+        if aggregated_weights is not None:
+            # Save aggregated_weights
+            print(f"Saving round {rnd} aggregated_weights...")
+            np.savez(LOG_DIR + f"round-{rnd}-weights.npz", *aggregated_weights)
+        return aggregated_weights
 
 def evaluate_metrics_aggregation_fn(eval_metrics):
     # Weigh accuracy of each client by number of examples used
@@ -51,5 +62,5 @@ def start_server(n_rounds, n_clients, fraction_fit):
     return history
 
 if __name__ == '__main__':
-    history = start_server(n_rounds=10, n_clients=3, fraction_fit=0.5)
+    history = start_server(n_rounds=100, n_clients=3, fraction_fit=0.5)
     print(history)

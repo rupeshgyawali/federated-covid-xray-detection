@@ -5,8 +5,15 @@ import tensorflow as tf
 
 def get_compiled_model():
     num_classes = 4
+
+    data_augmentation = tf.keras.models.Sequential([
+        tf.keras.layers.RandomFlip("horizontal",input_shape=(256, 256, 3)),
+        tf.keras.layers.RandomRotation(0.1),
+        tf.keras.layers.RandomZoom(0.1),
+    ])
     
     model = tf.keras.models.Sequential([
+        data_augmentation,
         tf.keras.layers.Rescaling(1./256, input_shape=(256, 256, 3)),
         tf.keras.layers.Conv2D(16, 3, padding='same', activation='relu'),
         tf.keras.layers.MaxPool2D(),
@@ -14,13 +21,16 @@ def get_compiled_model():
         tf.keras.layers.MaxPool2D(),
         tf.keras.layers.Conv2D(64, 3, padding='same', activation='relu'),
         tf.keras.layers.MaxPool2D(),
+        tf.keras.layers.Dropout(0.2),
+        tf.keras.layers.Conv2D(128, 3, padding='same', activation='relu'),
+        tf.keras.layers.MaxPool2D(),
+        tf.keras.layers.Dropout(0.2),
         tf.keras.layers.Flatten(),
         tf.keras.layers.Dense(128, activation='relu'),
-        tf.keras.layers.Dense(num_classes),
+        tf.keras.layers.Dense(num_classes, activation='softmax'),
     ])
     model.compile(optimizer='adam',
-                  loss=tf.keras.losses.SparseCategoricalCrossentropy(
-                      from_logits=True),
+                  loss=tf.keras.losses.SparseCategoricalCrossentropy(),
                   metrics=['accuracy'])
 
     return model
@@ -87,11 +97,11 @@ def start_client(dataset, model, log_dir=None):
 if __name__ == '__main__':
     if len(sys.argv) > 1:
         client_n = int(sys.argv[1])
-        dataset = get_dataset('/content/Dataset/client' + str(client_n))
+        dataset = get_dataset('/content/Dataset_NIID/client' + str(client_n))
         model = get_compiled_model()
         start_client(
             dataset, 
             model, 
-            log_dir='/content/drive/MyDrive/MajorProject/logs/experiment1/federated/client' + str(client_n))
+            log_dir='/content/drive/MyDrive/MajorProject/logs/experiment2/federated/client' + str(client_n))
     else:
         sys.stderr.write('No argumets provided.\n')
